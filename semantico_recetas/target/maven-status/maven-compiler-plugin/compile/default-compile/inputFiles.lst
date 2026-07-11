@@ -1,0 +1,12 @@
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/SemanticoAplicacion.java
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/api/SemanticoController.java
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/aplicacion/AnalizadorSemanticoService.java
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/aplicacion/reglas/ReglaCantidadValida.java
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/aplicacion/reglas/ReglaInstruccionCompatible.java
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/aplicacion/reglas/ReglaUnidadCompatible.java
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/aplicacion/reglas/ReglaValidacion.java
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/dominio/modelo/NodoIngrediente.java
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/dominio/modelo/NodoInstruccion.java
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/dominio/modelo/NodoReceta.java
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/dominio/modelo/ResultadoValidacion.java
+/home/santiagojimenez/Documentos/uniSexto/automatas/APE14/semantico_recetas/src/main/java/com/unl/semantico/infraestructura/CatalogoIngredientes.java

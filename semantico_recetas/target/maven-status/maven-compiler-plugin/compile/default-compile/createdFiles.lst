@@ -1,0 +1,13 @@
+com/unl/semantico/dominio/modelo/NodoInstruccion.class
+com/unl/semantico/dominio/modelo/NodoIngrediente.class
+com/unl/semantico/SemanticoAplicacion.class
+com/unl/semantico/aplicacion/reglas/ReglaUnidadCompatible.class
+com/unl/semantico/dominio/modelo/ResultadoValidacion.class
+com/unl/semantico/aplicacion/reglas/ReglaCantidadValida.class
+com/unl/semantico/aplicacion/AnalizadorSemanticoService.class
+com/unl/semantico/aplicacion/reglas/ReglaInstruccionCompatible.class
+com/unl/semantico/infraestructura/CatalogoIngredientes.class
+com/unl/semantico/aplicacion/reglas/ReglaValidacion.class
+com/unl/semantico/dominio/modelo/NodoReceta.class
+com/unl/semantico/api/SemanticoController.class
+com/unl/semantico/infraestructura/CatalogoIngredientes$InfoIngrediente.class

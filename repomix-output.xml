@@ -1,0 +1,1947 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+frontend-recetas/
+  src/
+    components/
+      AstTree.jsx
+      ErrorList.jsx
+      Header.jsx
+      HistoryPanel.jsx
+      LoadingSpinner.jsx
+      RecipeInput.jsx
+      ResultPanel.jsx
+      TokenTable.jsx
+    services/
+      api.js
+    App.jsx
+    index.css
+    main.jsx
+  .gitignore
+  .oxlintrc.json
+  index.html
+  package.json
+  README.md
+  vite.config.js
+semantico_recetas/
+  src/
+    main/
+      java/
+        com/
+          unl/
+            semantico/
+              api/
+                SemanticoController.java
+              aplicacion/
+                reglas/
+                  ReglaCantidadValida.java
+                  ReglaInstruccionCompatible.java
+                  ReglaUnidadCompatible.java
+                  ReglaValidacion.java
+                AnalizadorSemanticoService.java
+              dominio/
+                modelo/
+                  NodoIngrediente.java
+                  NodoInstruccion.java
+                  NodoReceta.java
+                  ResultadoValidacion.java
+              infraestructura/
+                CatalogoIngredientes.java
+              SemanticoAplicacion.java
+      resources/
+        application.properties
+  pom.xml
+sintactico_lexico_recetas/
+  src/
+    api/
+      rutas_compilacion.py
+    aplicacion/
+      estrategias/
+        estrategia_automata.py
+        estrategia_diccionario.py
+        estrategia_tokenizacion.py
+      analizador_sintactico.py
+      servicio_compilacion.py
+      tonkenizador.py
+    dominio/
+      modelos/
+        nodo_ast.py
+        token.py
+      excepciones.py
+    infraestructura/
+      cliente_ollama.py
+      cliente_semantico.py
+      generador_mensajes_error.py
+      repositorio_historial.py
+    historial.db
+    main.py
+  requirements.txt
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="frontend-recetas/src/components/AstTree.jsx">
+import { useState } from "react";
+
+const COLORES_INSTRUCCION = {
+  INSTRUCCION_AGREGAR: { bg: "bg-blue-100", text: "text-blue-800", dot: "bg-blue-500" },
+  INSTRUCCION_MEZCLAR: { bg: "bg-purple-100", text: "text-purple-800", dot: "bg-purple-500" },
+  INSTRUCCION_HORNEAR: { bg: "bg-orange-100", text: "text-orange-800", dot: "bg-orange-500" },
+  INSTRUCCION_REPOSAR: { bg: "bg-teal-100", text: "text-teal-800", dot: "bg-teal-500" },
+  INSTRUCCION_CORTAR:  { bg: "bg-red-100",   text: "text-red-800",   dot: "bg-red-500" },
+};
+
+const ETIQUETA_INSTRUCCION = {
+  INSTRUCCION_AGREGAR: "Agregar",
+  INSTRUCCION_MEZCLAR: "Mezclar",
+  INSTRUCCION_HORNEAR: "Hornear",
+  INSTRUCCION_REPOSAR: "Reposar",
+  INSTRUCCION_CORTAR:  "Cortar",
+};
+
+function IconoChevron({ abierto }) {
+  return (
+    <span className={`inline-block transition-transform duration-200 ${abierto ? "rotate-0" : "-rotate-90"}`}>
+      ▼
+    </span>
+  );
+}
+
+function LineaConectora({ esUltimo }) {
+  return (
+    <span className="inline-flex flex-col items-center mr-2 select-none text-gray-400">
+      <span className="text-sm leading-none">{esUltimo ? "└──" : "├──"}</span>
+    </span>
+  );
+}
+
+function BadgeArbol({ children, colorClasses, size = "sm" }) {
+  const sizeClass = size === "xs" ? "text-xs px-1.5 py-0.5" : "text-sm px-2.5 py-1";
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-md font-medium ${sizeClass} ${colorClasses}`}>
+      {children}
+    </span>
+  );
+}
+
+function NodoHoja({ etiqueta, valor }) {
+  return (
+    <div className="flex items-center gap-2 py-0.5">
+      <span className="text-xs text-gray-400 font-mono">{etiqueta}:</span>
+      <span className="text-sm text-gray-700 font-mono">{valor}</span>
+    </div>
+  );
+}
+
+function NodoIngrediente({ ingrediente, nivel }) {
+  const [abierto, setAbierto] = useState(true);
+  const tieneHijos = ingrediente.cantidad || ingrediente.unidad;
+
+  return (
+    <div>
+      <button
+        onClick={() => setAbierto(!abierto)}
+        className="flex items-center gap-2 w-full text-left py-0.5"
+      >
+        <span className="text-xs text-gray-400 w-4">{tieneHijos ? <IconoChevron abierto={abierto} /> : " "}</span>
+        <BadgeArbol colorClasses="bg-green-100 text-green-700" size="xs">
+          {tieneHijos && <span className="text-[10px]">{abierto ? "－" : "＋"}</span>}
+          🥄 {ingrediente.nombre}
+        </BadgeArbol>
+      </button>
+      {abierto && tieneHijos && (
+        <div className="ml-6 pl-3 border-l-2 border-green-200 space-y-0.5 mt-0.5">
+          {ingrediente.cantidad && <NodoHoja etiqueta="cantidad" valor={ingrediente.cantidad} />}
+          {ingrediente.unidad && <NodoHoja etiqueta="unidad" valor={ingrediente.unidad} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NodoInstruccion({ instruccion, esUltimo, nivel }) {
+  const [abierto, setAbierto] = useState(true);
+  const colores = COLORES_INSTRUCCION[instruccion.tipo] || { bg: "bg-gray-100", text: "text-gray-800", dot: "bg-gray-500" };
+  const etiqueta = ETIQUETA_INSTRUCCION[instruccion.tipo] || instruccion.tipo;
+  const tieneTiempo = instruccion.tiempo || instruccion.unidad_tiempo;
+  const tieneIngredientes = instruccion.ingredientes && instruccion.ingredientes.length > 0;
+  const expandible = tieneTiempo || tieneIngredientes;
+
+  return (
+    <div className="relative">
+      <div className="flex items-start gap-1">
+        {nivel > 0 && (
+          <div className="flex flex-col items-center pt-2">
+            <div className={`w-4 h-0.5 ${esUltimo ? "bg-blue-300" : "bg-blue-300"}`} />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <button
+            onClick={() => expandible && setAbierto(!abierto)}
+            className={`flex items-center gap-2 w-full text-left py-1.5 px-3 rounded-lg transition-colors ${colores.bg} ${expandible ? "cursor-pointer hover:brightness-95" : "cursor-default"}`}
+          >
+            {expandible && (
+              <span className={`transition-transform duration-200 text-xs ${abierto ? "rotate-0" : "-rotate-90"}`}>▼</span>
+            )}
+            {!expandible && <span className="w-3" />}
+            <span className={`w-2 h-2 rounded-full ${colores.dot}`} />
+            <span className={`font-semibold text-sm ${colores.text}`}>{etiqueta}</span>
+            {instruccion.tiempo && (
+              <span className="text-sm text-gray-500 ml-1">
+                ⏱ {instruccion.tiempo}{instruccion.unidad_tiempo ? ` ${instruccion.unidad_tiempo.replace("UNIDAD_TIEMPO_", "").toLowerCase()}` : ""}
+              </span>
+            )}
+          </button>
+
+          {abierto && tieneIngredientes && (
+            <div className="ml-4 pl-4 border-l-2 border-blue-200 mt-1 space-y-1">
+              {instruccion.ingredientes.map((ing, i) => (
+                <NodoIngrediente key={i} ingrediente={ing} nivel={nivel + 1} />
+              ))}
+            </div>
+          )}
+
+          {abierto && tieneTiempo && !tieneIngredientes && (
+            <div className="ml-4 pl-4 border-l-2 border-blue-200 mt-1">
+              {instruccion.tiempo && <NodoHoja etiqueta="tiempo" valor={`${instruccion.tiempo}${instruccion.unidad_tiempo ? ` ${instruccion.unidad_tiempo}` : ""}`} />}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function AstTree({ ast }) {
+  const [abierto, setAbierto] = useState(true);
+
+  if (!ast) return null;
+
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">AST</h3>
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 font-mono text-sm overflow-x-auto">
+        <button
+          onClick={() => setAbierto(!abierto)}
+          className="flex items-center gap-2 w-full text-left px-3 py-2 bg-gray-800 text-white rounded-lg mb-2"
+        >
+          <span className={`transition-transform duration-200 text-xs ${abierto ? "rotate-0" : "-rotate-90"}`}>▼</span>
+          <span className="w-2 h-2 rounded-full bg-white" />
+          <span className="font-semibold">NodoReceta</span>
+          {ast.instrucciones && <span className="text-gray-400 text-xs ml-1">({ast.instrucciones.length} instrucciones)</span>}
+        </button>
+
+        {abierto && (
+          <div className="ml-4 pl-4 border-l-2 border-gray-300 space-y-2">
+            {ast.instrucciones && ast.instrucciones.length > 0 ? (
+              ast.instrucciones.map((inst, i) => (
+                <NodoInstruccion
+                  key={i}
+                  instruccion={inst}
+                  esUltimo={i === ast.instrucciones.length - 1}
+                  nivel={1}
+                />
+              ))
+            ) : (
+              <p className="text-gray-400 text-sm ml-2">(sin instrucciones)</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="frontend-recetas/src/components/ErrorList.jsx">
+export default function ErrorList({ errores }) {
+  if (!errores || errores.length === 0) return null;
+
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-red-700 mb-2">
+        Errores ({errores.length})
+      </h3>
+      <ul className="space-y-1">
+        {errores.map((err, i) => (
+          <li
+            key={i}
+            className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md px-3 py-2"
+          >
+            {err}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+</file>
+
+<file path="frontend-recetas/src/components/Header.jsx">
+export default function Header({ detalle, onToggleDetalle }) {
+  return (
+    <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Compilador de Recetas</h1>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Analizador léxico, sintáctico y semántico de recetas de cocina
+        </p>
+      </div>
+      <label className="flex items-center gap-2 cursor-pointer select-none">
+        <span className="text-sm text-gray-600">Modo detalle</span>
+        <div className="relative">
+          <input
+            type="checkbox"
+            checked={detalle}
+            onChange={onToggleDetalle}
+            className="sr-only peer"
+          />
+          <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors" />
+          <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform" />
+        </div>
+      </label>
+    </header>
+  );
+}
+</file>
+
+<file path="frontend-recetas/src/components/HistoryPanel.jsx">
+import { useState, useEffect } from "react";
+import { obtenerHistorial } from "../services/api";
+
+export default function HistoryPanel({ onSelect }) {
+  const [historial, setHistorial] = useState([]);
+  const [abierto, setAbierto] = useState(false);
+
+  useEffect(() => {
+    if (abierto) {
+      obtenerHistorial()
+        .then(setHistorial)
+        .catch(() => {});
+    }
+  }, [abierto]);
+
+  function handleClick(oracion) {
+    onSelect(oracion);
+    setAbierto(false);
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setAbierto(!abierto)}
+        className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center text-lg"
+        title="Historial"
+      >
+        {abierto ? "✕" : "⌛"}
+      </button>
+
+      {abierto && (
+        <div className="fixed inset-0 z-30 bg-black/20" onClick={() => setAbierto(false)} />
+      )}
+
+      <div
+        className={`fixed bottom-20 right-6 z-40 w-80 max-h-96 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden transition-all duration-200 ${abierto ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
+      >
+        <div className="px-4 py-3 border-b border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-700">Historial de compilaciones</h3>
+        </div>
+        <div className="overflow-y-auto max-h-80">
+          {historial.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">Sin compilaciones aún</p>
+          ) : (
+            <ul className="divide-y divide-gray-50">
+              {historial.map((item) => (
+                <li key={item.id}>
+                  <button
+                    onClick={() => handleClick(item.oracion)}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    <p className="text-sm text-gray-700 truncate">{item.oracion}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {item.fecha} · {item.nodo}
+                    </p>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+</file>
+
+<file path="frontend-recetas/src/components/LoadingSpinner.jsx">
+export default function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+    </div>
+  );
+}
+</file>
+
+<file path="frontend-recetas/src/components/RecipeInput.jsx">
+import { useState } from "react";
+
+export default function RecipeInput({ onCompilar, loading }) {
+  const [oracion, setOracion] = useState("");
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!oracion.trim()) return;
+    onCompilar(oracion.trim());
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex gap-3">
+      <input
+        type="text"
+        value={oracion}
+        onChange={(e) => setOracion(e.target.value)}
+        placeholder='Ej: "agregar 2 tazas de harina"'
+        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+      />
+      <button
+        type="submit"
+        disabled={loading || !oracion.trim()}
+        className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        {loading ? "Compilando..." : "Compilar"}
+      </button>
+    </form>
+  );
+}
+</file>
+
+<file path="frontend-recetas/src/components/ResultPanel.jsx">
+import AstTree from "./AstTree";
+import TokenTable from "./TokenTable";
+import ErrorList from "./ErrorList";
+
+function Badge({ label, color }) {
+  return (
+    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${color}`}>
+      {label}
+    </span>
+  );
+}
+
+export default function ResultPanel({ resultado, detalle }) {
+  if (!resultado) return null;
+
+  const { ast, valido, errores, error, tokens, errores_sintacticos, errores_semanticos, oracion_original, tiempo_total_segundos, hilos_concurrentes, nodo } = resultado;
+
+  const sintacticos = errores_sintacticos || [];
+  const semanticos = errores_semanticos || [];
+  const todosErrores = errores || [];
+
+  return (
+    <div className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+          {error}
+        </div>
+      )}
+
+      {!error && (
+        <>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">
+              {oracion_original && (
+                <span className="text-gray-400">Receta: </span>
+              )}
+              <span className="font-medium text-gray-700">{oracion_original}</span>
+            </span>
+            {valido !== undefined && (
+              valido
+                ? <Badge label="Válido" color="bg-green-100 text-green-700" />
+                : <Badge label="Inválido" color="bg-red-100 text-red-700" />
+            )}
+          </div>
+
+          {detalle && (tiempo_total_segundos !== undefined) && (
+            <div className="flex gap-4 text-sm text-gray-500">
+              <span>Tiempo: <strong>{tiempo_total_segundos.toFixed(3)}s</strong></span>
+              <span>Hilos: <strong>{hilos_concurrentes}</strong></span>
+              {nodo && <span>Nodo: <strong>{nodo}</strong></span>}
+            </div>
+          )}
+
+          {todosErrores.length > 0 && <ErrorList errores={todosErrores} />}
+
+          {sintacticos.length > 0 && <ErrorList errores={sintacticos} />}
+          {semanticos.length > 0 && <ErrorList errores={semanticos} />}
+
+          {detalle && <TokenTable tokens={tokens} />}
+
+          {ast && <AstTree ast={ast} />}
+        </>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="frontend-recetas/src/components/TokenTable.jsx">
+export default function TokenTable({ tokens }) {
+  if (!tokens || tokens.length === 0) return null;
+
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">
+        Tokens ({tokens.length})
+      </h3>
+      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="text-left px-3 py-2 text-gray-500 font-medium">Nombre</th>
+              <th className="text-left px-3 py-2 text-gray-500 font-medium">Valor</th>
+              <th className="text-left px-3 py-2 text-gray-500 font-medium">Fuente</th>
+              <th className="text-right px-3 py-2 text-gray-500 font-medium">Tiempo (ms)</th>
+              <th className="text-right px-3 py-2 text-gray-500 font-medium">Hilo</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {tokens.map((t, i) => (
+              <tr key={i} className="hover:bg-gray-50">
+                <td className="px-3 py-2 font-mono text-blue-600">{t.nombre}</td>
+                <td className="px-3 py-2 font-mono">{t.valor}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${t.fuente === "llm" ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700"}`}>
+                    {t.fuente}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-right font-mono text-gray-500">{t.tiempo_ms}</td>
+                <td className="px-3 py-2 text-right font-mono text-gray-500">{t.hilo}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="frontend-recetas/src/services/api.js">
+const API_BASE = "http://localhost:5000";
+
+export async function compilar(oracion) {
+  const res = await fetch(`${API_BASE}/compilar`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ oracion }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || `Error ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function compilarDetalle(oracion) {
+  const res = await fetch(`${API_BASE}/compilar/detalle`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ oracion }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || `Error ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function obtenerHistorial() {
+  const res = await fetch(`${API_BASE}/historial`);
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return res.json();
+}
+</file>
+
+<file path="frontend-recetas/src/App.jsx">
+import { useState, useCallback } from "react";
+import Header from "./components/Header";
+import RecipeInput from "./components/RecipeInput";
+import ResultPanel from "./components/ResultPanel";
+import LoadingSpinner from "./components/LoadingSpinner";
+import HistoryPanel from "./components/HistoryPanel";
+import { compilar, compilarDetalle } from "./services/api";
+
+function App() {
+  const [detalle, setDetalle] = useState(false);
+  const [resultado, setResultado] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleCompilar = useCallback(async (oracion) => {
+    setLoading(true);
+    setError(null);
+    setResultado(null);
+    try {
+      const fn = detalle ? compilarDetalle : compilar;
+      const res = await fn(oracion);
+      setResultado(res);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [detalle]);
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header detalle={detalle} onToggleDetalle={() => setDetalle((d) => !d)} />
+
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-8 space-y-6">
+        <RecipeInput onCompilar={handleCompilar} loading={loading} />
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+            {error}
+          </div>
+        )}
+
+        {loading && <LoadingSpinner />}
+
+        {resultado && <ResultPanel resultado={resultado} detalle={detalle} />}
+
+        {!loading && !resultado && !error && (
+          <div className="text-center py-16">
+            <p className="text-gray-400 text-sm">
+              Escribe una receta y presiona "Compilar" para ver el análisis
+            </p>
+          </div>
+        )}
+      </main>
+
+      <HistoryPanel onSelect={handleCompilar} />
+    </div>
+  );
+}
+
+export default App;
+</file>
+
+<file path="frontend-recetas/src/index.css">
+@import "tailwindcss";
+</file>
+
+<file path="frontend-recetas/src/main.jsx">
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+</file>
+
+<file path="frontend-recetas/.gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="frontend-recetas/.oxlintrc.json">
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "oxc"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
+</file>
+
+<file path="frontend-recetas/index.html">
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compilador de Recetas</title>
+  </head>
+  <body class="bg-gray-50 text-gray-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="frontend-recetas/package.json">
+{
+  "name": "frontend-recetas",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "oxlint": "^1.71.0",
+    "tailwindcss": "^4.3.2",
+    "vite": "^8.1.1"
+  }
+}
+</file>
+
+<file path="frontend-recetas/README.md">
+# React + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the Oxlint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+</file>
+
+<file path="frontend-recetas/vite.config.js">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+})
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/api/SemanticoController.java">
+package com.unl.semantico.api;
+
+import com.unl.semantico.aplicacion.AnalizadorSemanticoService;
+import com.unl.semantico.dominio.modelo.NodoReceta;
+import com.unl.semantico.dominio.modelo.ResultadoValidacion;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+public class SemanticoController {
+
+    private final AnalizadorSemanticoService servicio;
+
+    public SemanticoController(AnalizadorSemanticoService servicio) {
+        this.servicio = servicio;
+    }
+
+    @PostMapping("/validar")
+    public ResultadoValidacion validar(@RequestBody NodoReceta receta) {
+        List<String> errores = servicio.analizar(receta);
+        return new ResultadoValidacion(errores);
+    }
+
+    @GetMapping("/")
+    public String index() {
+        return "{\"api\":\"Servicio Semantico\",\"version\":\"1.0\"}";
+    }
+}
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/aplicacion/reglas/ReglaCantidadValida.java">
+package com.unl.semantico.aplicacion.reglas;
+
+import com.unl.semantico.dominio.modelo.NodoIngrediente;
+import com.unl.semantico.dominio.modelo.NodoInstruccion;
+import com.unl.semantico.dominio.modelo.NodoReceta;
+import com.unl.semantico.infraestructura.CatalogoIngredientes;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Component
+public class ReglaCantidadValida implements ReglaValidacion {
+
+    private final CatalogoIngredientes catalogo;
+
+    public ReglaCantidadValida(CatalogoIngredientes catalogo) {
+        this.catalogo = catalogo;
+    }
+
+    @Override
+    public List<String> validar(NodoReceta receta) {
+        List<String> errores = new ArrayList<>();
+
+        for (NodoInstruccion instruccion : receta.getInstrucciones()) {
+            for (NodoIngrediente ingrediente : instruccion.getIngredientes()) {
+                validarCantidadIngrediente(ingrediente, errores);
+            }
+            if (instruccion.getTiempo() != null) {
+                validarTiempo(instruccion, errores);
+            }
+        }
+        return errores;
+    }
+
+    private void validarCantidadIngrediente(NodoIngrediente ingrediente, List<String> errores) {
+        if (ingrediente.getCantidad() == null) {
+            return;
+        }
+        Double valor = catalogo.resolverCantidad(ingrediente.getCantidad());
+        if (valor == null) {
+            errores.add(String.format(
+                    "Cantidad '%s' de '%s' no es interpretable.",
+                    ingrediente.getCantidad(), ingrediente.getNombre()));
+        } else if (valor <= 0) {
+            errores.add(String.format(
+                    "Cantidad de '%s' debe ser mayor a cero.", ingrediente.getNombre()));
+        }
+    }
+
+    private void validarTiempo(NodoInstruccion instruccion, List<String> errores) {
+        Double valor = catalogo.resolverCantidad(instruccion.getTiempo());
+        if (valor == null) {
+            errores.add(String.format(
+                    "Cantidad de tiempo '%s' no es interpretable.", instruccion.getTiempo()));
+            return;
+        }
+        if (valor <= 0) {
+            errores.add(String.format(
+                    "El tiempo en '%s' debe ser mayor a cero.", instruccion.getTipo()));
+        }
+        if (instruccion.getUnidadTiempo() != null
+            && instruccion.getUnidadTiempo().startsWith("hora")
+            && valor > 24) {
+        errores.add(String.format(
+            "Tiempo de %s horas en '%s' es poco razonable.",
+            valor, instruccion.getTipo()));
+}
+    }
+}
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/aplicacion/reglas/ReglaInstruccionCompatible.java">
+package com.unl.semantico.aplicacion.reglas;
+
+import com.unl.semantico.dominio.modelo.NodoIngrediente;
+import com.unl.semantico.dominio.modelo.NodoInstruccion;
+import com.unl.semantico.dominio.modelo.NodoReceta;
+import com.unl.semantico.infraestructura.CatalogoIngredientes;
+import com.unl.semantico.infraestructura.CatalogoIngredientes.InfoIngrediente;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+@Component
+public class ReglaInstruccionCompatible implements ReglaValidacion {
+
+    private static final Set<String> INSTRUCCIONES_SOLO_SOLIDOS = Set.of("INSTRUCCION_CORTAR");
+
+    private final CatalogoIngredientes catalogo;
+
+    public ReglaInstruccionCompatible(CatalogoIngredientes catalogo) {
+        this.catalogo = catalogo;
+    }
+
+    @Override
+    public List<String> validar(NodoReceta receta) {
+        List<String> errores = new ArrayList<>();
+
+        for (NodoInstruccion instruccion : receta.getInstrucciones()) {
+            if (!INSTRUCCIONES_SOLO_SOLIDOS.contains(instruccion.getTipo())) {
+                continue;
+            }
+            for (NodoIngrediente ingrediente : instruccion.getIngredientes()) {
+                InfoIngrediente info = catalogo.buscar(ingrediente.getNombre());
+                if (info != null && "liquido".equals(info.tipo())) {
+                    errores.add(String.format(
+                            "No se puede aplicar '%s' sobre '%s' (es liquido).",
+                            instruccion.getTipo(), ingrediente.getNombre()));
+                }
+            }
+        }
+        return errores;
+    }
+}
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/aplicacion/reglas/ReglaUnidadCompatible.java">
+package com.unl.semantico.aplicacion.reglas;
+
+import com.unl.semantico.dominio.modelo.NodoIngrediente;
+import com.unl.semantico.dominio.modelo.NodoInstruccion;
+import com.unl.semantico.dominio.modelo.NodoReceta;
+import com.unl.semantico.infraestructura.CatalogoIngredientes;
+import com.unl.semantico.infraestructura.CatalogoIngredientes.InfoIngrediente;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Component
+public class ReglaUnidadCompatible implements ReglaValidacion {
+
+    private final CatalogoIngredientes catalogo;
+
+    public ReglaUnidadCompatible(CatalogoIngredientes catalogo) {
+        this.catalogo = catalogo;
+    }
+
+    @Override
+    public List<String> validar(NodoReceta receta) {
+        List<String> errores = new ArrayList<>();
+
+        for (NodoInstruccion instruccion : receta.getInstrucciones()) {
+            for (NodoIngrediente ingrediente : instruccion.getIngredientes()) {
+                InfoIngrediente info = catalogo.buscar(ingrediente.getNombre());
+
+                if (info == null) {
+                    errores.add(String.format(
+                            "Ingrediente '%s' no reconocido en el catalogo de recetas.",
+                            ingrediente.getNombre()));
+                    continue;
+                }
+
+                if (ingrediente.getUnidad() != null
+                        && !info.unidadesValidas().contains(ingrediente.getUnidad())) {
+                    errores.add(String.format(
+                            "'%s' no admite la unidad '%s' (tipo '%s' requiere %s).",
+                            ingrediente.getNombre(), ingrediente.getUnidad(),
+                            info.tipo(), info.unidadesValidas()));
+                }
+            }
+        }
+        return errores;
+    }
+}
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/aplicacion/reglas/ReglaValidacion.java">
+package com.unl.semantico.aplicacion.reglas;
+
+import com.unl.semantico.dominio.modelo.NodoReceta;
+
+import java.util.List;
+
+public interface ReglaValidacion {
+    List<String> validar(NodoReceta receta);
+}
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/aplicacion/AnalizadorSemanticoService.java">
+package com.unl.semantico.aplicacion;
+
+import com.unl.semantico.dominio.modelo.NodoReceta;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.unl.semantico.aplicacion.reglas.ReglaValidacion;
+
+@Service
+public class AnalizadorSemanticoService {
+
+    private final List<ReglaValidacion> reglas;
+
+    // Spring inyecta automaticamente todos los beans que implementan ReglaValidacion
+    public AnalizadorSemanticoService(List<ReglaValidacion> reglas) {
+        this.reglas = reglas;
+    }
+
+    public List<String> analizar(NodoReceta receta) {
+        List<String> errores = new ArrayList<>();
+        for (ReglaValidacion regla : reglas) {
+            errores.addAll(regla.validar(receta));
+        }
+        return errores;
+    }
+}
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/dominio/modelo/NodoIngrediente.java">
+package com.unl.semantico.dominio.modelo;
+
+public class NodoIngrediente {
+
+    private String nombre;
+    private String cantidad;
+    private String unidad;
+
+    public NodoIngrediente() {
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public String getCantidad() {
+        return cantidad;
+    }
+
+    public void setCantidad(String cantidad) {
+        this.cantidad = cantidad;
+    }
+
+    public String getUnidad() {
+        return unidad;
+    }
+
+    public void setUnidad(String unidad) {
+        this.unidad = unidad;
+    }
+}
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/dominio/modelo/NodoInstruccion.java">
+package com.unl.semantico.dominio.modelo;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class NodoInstruccion {
+
+    private String tipo;
+    private List<NodoIngrediente> ingredientes = new ArrayList<>();
+    private String tiempo;
+    private String unidadTiempo;
+
+    public NodoInstruccion() {
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public List<NodoIngrediente> getIngredientes() {
+        return ingredientes;
+    }
+
+    public void setIngredientes(List<NodoIngrediente> ingredientes) {
+        this.ingredientes = ingredientes;
+    }
+
+    public String getTiempo() {
+        return tiempo;
+    }
+
+    public void setTiempo(String tiempo) {
+        this.tiempo = tiempo;
+    }
+
+    public String getUnidadTiempo() {
+        return unidadTiempo;
+    }
+
+    public void setUnidadTiempo(String unidadTiempo) {
+        this.unidadTiempo = unidadTiempo;
+    }
+}
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/dominio/modelo/NodoReceta.java">
+package com.unl.semantico.dominio.modelo;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class NodoReceta {
+
+    private List<NodoInstruccion> instrucciones = new ArrayList<>();
+
+    public NodoReceta() {
+    }
+
+    public List<NodoInstruccion> getInstrucciones() {
+        return instrucciones;
+    }
+
+    public void setInstrucciones(List<NodoInstruccion> instrucciones) {
+        this.instrucciones = instrucciones;
+    }
+}
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/dominio/modelo/ResultadoValidacion.java">
+package com.unl.semantico.dominio.modelo;
+
+import java.util.List;
+
+public class ResultadoValidacion {
+
+    private List<String> erroresSemanticos;
+    private boolean esValido;
+
+    public ResultadoValidacion(List<String> erroresSemanticos) {
+        this.erroresSemanticos = erroresSemanticos;
+        this.esValido = erroresSemanticos.isEmpty();
+    }
+
+    public List<String> getErroresSemanticos() {
+        return erroresSemanticos;
+    }
+
+    public boolean isEsValido() {
+        return esValido;
+    }
+}
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/infraestructura/CatalogoIngredientes.java">
+package com.unl.semantico.infraestructura;
+
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
+
+@Component
+public class CatalogoIngredientes {
+
+    public record InfoIngrediente(String tipo, List<String> unidadesValidas) {
+    }
+
+    private static final Map<String, InfoIngrediente> INGREDIENTES = Map.of(
+            "harina", new InfoIngrediente("solido", List.of("UNIDAD_MASA")),
+            "azucar", new InfoIngrediente("solido", List.of("UNIDAD_MASA")),
+            "sal", new InfoIngrediente("solido", List.of("UNIDAD_MASA")),
+            "leche", new InfoIngrediente("liquido", List.of("UNIDAD_VOLUMEN")),
+            "aceite", new InfoIngrediente("liquido", List.of("UNIDAD_VOLUMEN")),
+            "huevo", new InfoIngrediente("unidad", List.of("UNIDAD_UNIDAD"))
+    );
+
+    private static final Map<String, Double> CANTIDAD_A_NUMERO = Map.of(
+            "un", 1.0,
+            "una", 1.0,
+            "dos", 2.0,
+            "tres", 3.0,
+            "media", 0.5,
+            "par", 2.0
+    );
+
+    public InfoIngrediente buscar(String nombreIngrediente) {
+        return INGREDIENTES.get(nombreIngrediente);
+    }
+
+    public Double resolverCantidad(String cantidad) {
+        if (cantidad == null) {
+            return null;
+        }
+        if (cantidad.chars().allMatch(Character::isDigit) && !cantidad.isEmpty()) {
+            return Double.parseDouble(cantidad);
+        }
+        return CANTIDAD_A_NUMERO.get(cantidad);
+    }
+}
+</file>
+
+<file path="semantico_recetas/src/main/java/com/unl/semantico/SemanticoAplicacion.java">
+package com.unl.semantico;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class SemanticoAplicacion {
+    public static void main(String[] args) {
+        SpringApplication.run(SemanticoAplicacion.class, args);
+    }
+}
+</file>
+
+<file path="semantico_recetas/src/main/resources/application.properties">
+server.port=8080
+spring.application.name=servicio-semantico
+
+# Jackson: acepta y devuelve JSON en snake_case automaticamente
+spring.jackson.property-naming-strategy=SNAKE_CASE
+</file>
+
+<file path="semantico_recetas/pom.xml">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.4</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.unl</groupId>
+    <artifactId>servicio-semantico</artifactId>
+    <version>1.0.0</version>
+    <name>servicio-semantico</name>
+    <description>Analizador semantico para el compilador de recetas (APE 12)</description>
+
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+</file>
+
+<file path="sintactico_lexico_recetas/src/api/rutas_compilacion.py">
+import os
+from dataclasses import asdict
+from flask import Blueprint, request, jsonify
+from aplicacion.servicio_compilacion import ServicioCompilacion
+from infraestructura.repositorio_historial import guardar_peticion, listar_historial
+
+bp_compilacion = Blueprint("compilacion", __name__)
+servicio = ServicioCompilacion()
+
+NODO_ID = os.environ.get("NODO_ID", "desconocido")
+
+
+@bp_compilacion.route("/compilar", methods=["POST"])
+def compilar():
+    datos = request.get_json()
+    if not datos or "oracion" not in datos:
+        return jsonify({"error": "Campo 'oracion' requerido"}), 400
+
+    resultado = servicio.compilar(datos["oracion"])
+    guardar_peticion(datos["oracion"], NODO_ID)
+
+    # Respuesta resumida: lo que le importa a un usuario/cliente final
+    return jsonify({
+        "oracion": resultado.oracion_original,
+        "ast": asdict(resultado.ast) if resultado.ast else None,
+        "valido": not resultado.errores_sintacticos and not resultado.errores_semanticos,
+        "errores": resultado.errores_sintacticos + resultado.errores_semanticos,
+        "error": resultado.error,
+    })
+
+
+@bp_compilacion.route("/compilar/detalle", methods=["POST"])
+def compilar_detalle():
+    """Endpoint de depuración: expone tokens, tiempos e hilos para la tabla de observaciones."""
+    datos = request.get_json()
+    if not datos or "oracion" not in datos:
+        return jsonify({"error": "Campo 'oracion' requerido"}), 400
+
+    resultado = servicio.compilar(datos["oracion"])
+
+    return jsonify({
+        "tokens": [
+            {
+                "nombre": t.nombre, "valor": t.valor, "fuente": t.fuente,
+                "tiempo_ms": round(t.tiempo_ms, 4), "hilo": t.hilo,
+            }
+            for t in resultado.tokens
+        ],
+        "ast": asdict(resultado.ast) if resultado.ast else None,
+        "errores_sintacticos": resultado.errores_sintacticos,
+        "errores_semanticos": resultado.errores_semanticos,
+        "tiempo_total_segundos": resultado.tiempo_total_segundos,
+        "hilos_concurrentes": resultado.hilos_concurrentes,
+        "oracion_original": resultado.oracion_original,
+        "error": resultado.error,
+        "nodo": NODO_ID,
+    })
+
+
+@bp_compilacion.route("/historial", methods=["GET"])
+def historial():
+    filas = listar_historial()
+    return jsonify([
+        {"id": f[0], "oracion": f[1], "nodo": f[2], "fecha": f[3]} for f in filas
+    ])
+
+
+@bp_compilacion.route("/", methods=["GET"])
+def index():
+    return {"api": "Compilador de Recetas de Cocina", "version": "2.0", "nodo": NODO_ID}
+</file>
+
+<file path="sintactico_lexico_recetas/src/aplicacion/estrategias/estrategia_automata.py">
+import re
+import time
+import threading
+from dominio.modelos.token import Token
+from aplicacion.estrategias.estrategia_tokenizacion import EstrategiaTokenizacion
+
+
+class EstrategiaAutomata(EstrategiaTokenizacion):
+    def __init__(self):
+        self.patrones = [
+            (r'\d+', 'NUMERO'),
+        ]
+
+    def tokenizar(self, texto: str) -> list[Token]:
+        return [t for t, _, _ in self.tokenizar_con_posiciones(texto)]
+
+    def tokenizar_con_posiciones(self, texto: str) -> list[tuple[Token, int, int]]:
+        resultados = []
+        nombre_hilo = threading.current_thread().name
+        for patron, nombre_token in self.patrones:
+            inicio = time.perf_counter()
+            for match in re.finditer(patron, texto):
+                token = Token(
+                    nombre=nombre_token,
+                    valor=match.group(),
+                    fuente='AFD',
+                    tiempo_ms=(time.perf_counter() - inicio) * 1000,
+                    hilo=nombre_hilo,
+                )
+                resultados.append((token, match.start(), match.end()))
+        resultados.sort(key=lambda x: x[1])
+        return resultados
+</file>
+
+<file path="sintactico_lexico_recetas/src/aplicacion/estrategias/estrategia_diccionario.py">
+import time
+import threading
+from dominio.modelos.token import Token
+from aplicacion.estrategias.estrategia_tokenizacion import EstrategiaTokenizacion
+
+TABLA_TOKENS = {
+    "agregar": "INSTRUCCION_AGREGAR", "añadir": "INSTRUCCION_AGREGAR",
+    "echar": "INSTRUCCION_AGREGAR", "poner": "INSTRUCCION_AGREGAR",
+    "mezclar": "INSTRUCCION_MEZCLAR", "revolver": "INSTRUCCION_MEZCLAR",
+    "batir": "INSTRUCCION_MEZCLAR", "remover": "INSTRUCCION_MEZCLAR",
+    "hornear": "INSTRUCCION_HORNEAR",
+    "reposar": "INSTRUCCION_REPOSAR", "enfriar": "INSTRUCCION_REPOSAR",
+    "cortar": "INSTRUCCION_CORTAR", "picar": "INSTRUCCION_CORTAR", "rebanar": "INSTRUCCION_CORTAR",
+    "un": "CANTIDAD", "una": "CANTIDAD", "dos": "CANTIDAD", "tres": "CANTIDAD",
+    "media": "CANTIDAD", "par": "CANTIDAD", "cero": "CANTIDAD",
+    "taza": "UNIDAD_VOLUMEN", "tazas": "UNIDAD_VOLUMEN", "litro": "UNIDAD_VOLUMEN",
+    "litros": "UNIDAD_VOLUMEN", "ml": "UNIDAD_VOLUMEN", "cucharada": "UNIDAD_VOLUMEN",
+    "cucharadas": "UNIDAD_VOLUMEN",
+    "kilo": "UNIDAD_MASA", "kilos": "UNIDAD_MASA", "gramo": "UNIDAD_MASA",
+    "gramos": "UNIDAD_MASA", "libra": "UNIDAD_MASA", "libras": "UNIDAD_MASA",
+    "onza": "UNIDAD_MASA", "onzas": "UNIDAD_MASA",
+    "minuto": "UNIDAD_TIEMPO", "minutos": "UNIDAD_TIEMPO", "hora": "UNIDAD_TIEMPO",
+    "horas": "UNIDAD_TIEMPO", "segundo": "UNIDAD_TIEMPO", "segundos": "UNIDAD_TIEMPO",
+    "unidad": "UNIDAD_UNIDAD", "unidades": "UNIDAD_UNIDAD", "pieza": "UNIDAD_UNIDAD",
+    "piezas": "UNIDAD_UNIDAD",
+    "harina": "INGREDIENTE", "azucar": "INGREDIENTE", "huevo": "INGREDIENTE",
+    "huevos": "INGREDIENTE", "leche": "INGREDIENTE", "sal": "INGREDIENTE",
+    "aceite": "INGREDIENTE",
+    "y": "CONECTOR_Y", "e": "CONECTOR_Y",
+    "por": "CONECTOR_POR",
+    "de": "CONECTOR_DE", "del": "CONECTOR_DE",
+}
+
+
+class EstrategiaDiccionario(EstrategiaTokenizacion):
+    """Clasifica palabras de lenguaje natural usando una tabla de busqueda
+    determinista (sin IA). Esta es la logica real de tokenizacion."""
+
+    def tokenizar(self, texto: str) -> list[Token]:
+        return [t for t, _ in self.tokenizar_con_posiciones(texto)]
+
+    def tokenizar_con_posiciones(self, texto: str) -> list[tuple[Token, int]]:
+        nombre_hilo = threading.current_thread().name
+        resultados = []
+        cursor = 0
+        for palabra in texto.split():
+            palabra_normalizada = palabra.lower().strip(".,;:")
+            inicio = time.perf_counter()
+            nombre_token = TABLA_TOKENS.get(palabra_normalizada, "TEXTO_NO_RECONOCIDO")
+            tiempo_ms = (time.perf_counter() - inicio) * 1000
+            token = Token(
+                nombre=nombre_token,
+                valor=palabra,
+                fuente='DICCIONARIO',
+                tiempo_ms=tiempo_ms,
+                hilo=nombre_hilo,
+            )
+            pos = texto.find(palabra, cursor)
+            resultados.append((token, pos))
+            cursor = pos + len(palabra)
+        return resultados
+</file>
+
+<file path="sintactico_lexico_recetas/src/aplicacion/estrategias/estrategia_tokenizacion.py">
+from abc import ABC, abstractmethod
+from dominio.modelos.token import Token
+
+
+class EstrategiaTokenizacion(ABC):
+    @abstractmethod
+    def tokenizar(self, texto: str) -> list[Token]:
+        pass
+</file>
+
+<file path="sintactico_lexico_recetas/src/aplicacion/analizador_sintactico.py">
+from dominio.modelos.token import Token
+from dominio.modelos.nodo_ast import NodoReceta, NodoInstruccion, NodoIngrediente
+from dominio.excepciones import ErrorSintactico
+
+
+class AnalizadorSintactico:
+    def __init__(self, tokens: list[Token]):
+        self.tokens = tokens
+        self.pos = 0
+
+    def _actual(self) -> Token | None:
+        return self.tokens[self.pos] if self.pos < len(self.tokens) else None
+
+    def _avanzar(self) -> Token:
+        tok = self._actual()
+        self.pos += 1
+        return tok
+
+    def _match(self, *nombres: str) -> bool:
+        tok = self._actual()
+        return tok is not None and tok.nombre in nombres
+
+    def _siguiente_es_ingrediente(self) -> bool:
+        """Mira el token despues de CONECTOR_Y para decidir si es otro
+        ingrediente (misma instruccion) o el inicio de una nueva instruccion."""
+        siguiente = self.tokens[self.pos + 1] if self.pos + 1 < len(self.tokens) else None
+        if siguiente is None:
+            return False
+        return not siguiente.nombre.startswith("INSTRUCCION_")
+
+    def parsear(self) -> tuple[NodoReceta, list[str]]:
+        instrucciones = []
+        errores = []
+        while self._actual() is not None:
+            if self._match("CONECTOR_Y"):
+                self._avanzar()
+                continue
+            try:
+                instrucciones.append(self._instruccion())
+            except ErrorSintactico as e:
+                errores.append(str(e))
+                self._avanzar()
+        return NodoReceta(instrucciones=instrucciones), errores
+
+    def _instruccion(self) -> NodoInstruccion:
+        tok = self._actual()
+        if tok is None or not tok.nombre.startswith("INSTRUCCION_"):
+            encontrado = tok.nombre if tok else "FIN_DE_ENTRADA"
+            raise ErrorSintactico(f"Se esperaba una instruccion, se encontro '{encontrado}'.")
+        self._avanzar()
+        tipo = tok.nombre
+
+        if tipo == "INSTRUCCION_AGREGAR":
+            ingredientes = [self._ingrediente()]
+            while self._match("CONECTOR_Y") and self._siguiente_es_ingrediente():
+                self._avanzar()
+                ingredientes.append(self._ingrediente())
+            return NodoInstruccion(tipo=tipo, ingredientes=ingredientes)
+
+        if tipo in ("INSTRUCCION_HORNEAR", "INSTRUCCION_REPOSAR"):
+            if self._match("CONECTOR_POR"):
+                self._avanzar()
+            cantidad, unidad = self._tiempo()
+            return NodoInstruccion(tipo=tipo, tiempo=cantidad, unidad_tiempo=unidad)
+
+        if tipo == "INSTRUCCION_MEZCLAR":
+            cantidad = unidad = None
+            if self._match("CONECTOR_POR"):
+                self._avanzar()
+                cantidad, unidad = self._tiempo()
+            return NodoInstruccion(tipo=tipo, tiempo=cantidad, unidad_tiempo=unidad)
+
+        if tipo == "INSTRUCCION_CORTAR":
+            ingredientes = [self._ingrediente()] if self._match("INGREDIENTE") else []
+            return NodoInstruccion(tipo=tipo, ingredientes=ingredientes)
+
+        raise ErrorSintactico(f"Instruccion no soportada por la gramatica: '{tipo}'.")
+
+    def _ingrediente(self) -> NodoIngrediente:
+        cantidad = unidad = None
+        if self._match("CANTIDAD", "NUMERO"):
+            cantidad = self._avanzar().valor
+        if self._match("CONECTOR_DE"):
+            self._avanzar()
+        if self._match("UNIDAD_VOLUMEN", "UNIDAD_MASA", "UNIDAD_UNIDAD"):
+            unidad = self._avanzar().nombre
+            if self._match("CONECTOR_DE"):
+                self._avanzar()
+        if not self._match("INGREDIENTE"):
+            tok = self._actual()
+            encontrado = tok.nombre if tok else "FIN_DE_ENTRADA"
+            raise ErrorSintactico(f"Se esperaba INGREDIENTE, se encontro '{encontrado}'.")
+        nombre = self._avanzar().valor
+        return NodoIngrediente(nombre=nombre, cantidad=cantidad, unidad=unidad)
+
+    def _tiempo(self) -> tuple[str, str]:
+        if not self._match("CANTIDAD", "NUMERO"):
+            tok = self._actual()
+            encontrado = tok.nombre if tok else "FIN_DE_ENTRADA"
+            raise ErrorSintactico(f"Se esperaba una cantidad de tiempo, se encontro '{encontrado}'.")
+        cantidad = self._avanzar().valor
+        if not self._match("UNIDAD_TIEMPO"):
+            tok = self._actual()
+            encontrado = tok.nombre if tok else "FIN_DE_ENTRADA"
+            raise ErrorSintactico(f"Se esperaba UNIDAD_TIEMPO, se encontro '{encontrado}'.")
+        unidad = self._avanzar().valor
+        return cantidad, unidad
+</file>
+
+<file path="sintactico_lexico_recetas/src/aplicacion/servicio_compilacion.py">
+from dominio.modelos.token import ResultadoCompilacion
+from aplicacion.tonkenizador import Tokenizador
+from aplicacion.analizador_sintactico import AnalizadorSintactico
+from infraestructura.cliente_semantico import ClienteSemantico
+from infraestructura.generador_mensajes_error import GeneradorMensajesError
+from dominio.excepciones import ErrorServicioSemantico
+
+
+class ServicioCompilacion:
+    def __init__(self, tokenizador: Tokenizador = None,
+                 cliente_semantico: ClienteSemantico = None,
+                 generador_errores: GeneradorMensajesError = None):
+        self.tokenizador = tokenizador or Tokenizador()
+        self.cliente_semantico = cliente_semantico or ClienteSemantico()
+        self.generador_errores = generador_errores or GeneradorMensajesError()
+
+    def compilar(self, oracion: str) -> ResultadoCompilacion:
+        try:
+            resultado_lexico = self.tokenizador.tokenizar(oracion)
+            parser = AnalizadorSintactico(resultado_lexico['tokens'])
+            ast, errores_sintacticos = parser.parsear()
+
+            errores_semanticos = []
+            if not errores_sintacticos:
+                try:
+                    errores_semanticos = self.cliente_semantico.validar(ast)
+                except ErrorServicioSemantico as e:
+                    errores_semanticos = [str(e)]
+
+            errores_sintacticos = [
+                self.generador_errores.humanizar(e) for e in errores_sintacticos
+            ]
+            errores_semanticos = [
+                self.generador_errores.humanizar(e) for e in errores_semanticos
+            ]
+
+            return ResultadoCompilacion(
+                tokens=resultado_lexico['tokens'],
+                tiempo_total_segundos=resultado_lexico['tiempo_total_segundos'],
+                hilos_concurrentes=resultado_lexico['hilos_concurrentes'],
+                oracion_original=resultado_lexico['oracion_original'],
+                ast=ast,
+                errores_sintacticos=errores_sintacticos,
+                errores_semanticos=errores_semanticos,
+            )
+        except Exception as e:
+            return ResultadoCompilacion(
+                tokens=[], tiempo_total_segundos=0.0, hilos_concurrentes=0,
+                oracion_original=oracion, error=str(e),
+            )
+</file>
+
+<file path="sintactico_lexico_recetas/src/aplicacion/tonkenizador.py">
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from aplicacion.estrategias.estrategia_automata import EstrategiaAutomata
+from aplicacion.estrategias.estrategia_diccionario import EstrategiaDiccionario
+
+
+class Tokenizador:
+    def __init__(self, estrategia_automata: EstrategiaAutomata = None,
+                 estrategia_diccionario: EstrategiaDiccionario = None):
+        self.estrategia_automata = estrategia_automata or EstrategiaAutomata()
+        self.estrategia_diccionario = estrategia_diccionario or EstrategiaDiccionario()
+
+    def tokenizar(self, texto: str) -> dict:
+        inicio_total = time.perf_counter()
+
+        matches_afd = self._correr_afd(texto)
+
+        fragmentos_nl = {}
+        cursor = 0
+        for _, inicio, fin in matches_afd:
+            frag = texto[cursor:inicio].strip()
+            if frag:
+                fragmentos_nl[cursor] = frag
+            cursor = fin
+        frag_final = texto[cursor:].strip()
+        if frag_final:
+            fragmentos_nl[cursor] = frag_final
+
+        eventos_dic = []
+        if fragmentos_nl:
+            with ThreadPoolExecutor(max_workers=len(fragmentos_nl), thread_name_prefix='DIC-') as ejecutor:
+                futuros = {
+                    ejecutor.submit(self.estrategia_diccionario.tokenizar_con_posiciones, frag): pos
+                    for pos, frag in fragmentos_nl.items()
+                }
+                for futuro in as_completed(futuros):
+                    offset = futuros[futuro]
+                    for token, pos_relativa in futuro.result():
+                        eventos_dic.append((offset + pos_relativa, token))
+
+        eventos = [(pos, tok) for pos, tok in eventos_dic]
+        eventos += [(inicio, tok) for tok, inicio, _ in matches_afd]
+        eventos.sort(key=lambda e: e[0])
+
+        tokens_final = [tok for _, tok in eventos]
+
+        tiempo_total = time.perf_counter() - inicio_total
+        hilos_concurrentes = 1 + len(fragmentos_nl)
+
+        return {
+            'tokens': tokens_final,
+            'tiempo_total_segundos': round(tiempo_total, 4),
+            'hilos_concurrentes': hilos_concurrentes,
+            'oracion_original': texto,
+        }
+
+    def _correr_afd(self, texto: str):
+        return self.estrategia_automata.tokenizar_con_posiciones(texto)
+</file>
+
+<file path="sintactico_lexico_recetas/src/dominio/modelos/nodo_ast.py">
+from dataclasses import dataclass, field
+from typing import Optional
+
+
+@dataclass
+class NodoIngrediente:
+    nombre: str
+    cantidad: Optional[str] = None
+    unidad: Optional[str] = None
+
+
+@dataclass
+class NodoInstruccion:
+    tipo: str
+    ingredientes: list[NodoIngrediente] = field(default_factory=list)
+    tiempo: Optional[str] = None
+    unidad_tiempo: Optional[str] = None
+
+
+@dataclass
+class NodoReceta:
+    instrucciones: list[NodoInstruccion] = field(default_factory=list)
+</file>
+
+<file path="sintactico_lexico_recetas/src/dominio/modelos/token.py">
+from dataclasses import dataclass, field
+from typing import Optional
+from dominio.modelos.nodo_ast import NodoReceta
+
+
+@dataclass
+class Token:
+    nombre: str
+    valor: str
+    fuente: str
+    tiempo_ms: float = 0.0
+    hilo: str = ""
+
+
+@dataclass
+class ResultadoCompilacion:
+    tokens: list[Token]
+    tiempo_total_segundos: float
+    hilos_concurrentes: int
+    oracion_original: str
+    ast: Optional[NodoReceta] = None
+    errores_sintacticos: list[str] = field(default_factory=list)
+    errores_semanticos: list[str] = field(default_factory=list)
+    error: Optional[str] = None
+</file>
+
+<file path="sintactico_lexico_recetas/src/dominio/excepciones.py">
+class ErrorSintactico(Exception):
+    """Error detectado durante el análisis sintáctico (parser)."""
+    pass
+
+
+class ErrorSemantico(Exception):
+    """Error detectado durante el análisis semántico."""
+    pass
+
+
+class ErrorServicioSemantico(Exception):
+    """Error de comunicación con el microservicio semántico en Java."""
+    pass
+
+
+class ErrorClienteOllama(Exception):
+    """Error de comunicación con el servidor local de Ollama."""
+    pass
+</file>
+
+<file path="sintactico_lexico_recetas/src/infraestructura/cliente_ollama.py">
+import httpx
+from dominio.excepciones import ErrorClienteOllama
+
+MODELO_POR_DEFECTO = "llama3.2:3b"
+URL_BASE = "http://localhost:11434"
+TIEMPO_MAXIMO = 15
+
+
+class ClienteOllama:
+    def __init__(self, modelo: str = MODELO_POR_DEFECTO):
+        self.modelo = modelo
+        self.url = f"{URL_BASE}/api/chat"
+
+    def consultar(self, sistema: str, usuario: str, formato_json: bool = False) -> str:
+        payload = {
+            "model": self.modelo,
+            "messages": [
+                {"role": "system", "content": sistema},
+                {"role": "user", "content": usuario},
+            ],
+            "stream": False,
+            "options": {"temperature": 0},
+        }
+        if formato_json:
+            payload["format"] = "json"
+
+        try:
+            with httpx.Client(timeout=TIEMPO_MAXIMO) as cliente:
+                respuesta = cliente.post(self.url, json=payload)
+                respuesta.raise_for_status()
+                return respuesta.json()["message"]["content"].strip()
+        except httpx.ConnectError as e:
+            raise ErrorClienteOllama(
+                "No se pudo conectar con Ollama. ¿Está corriendo en localhost:11434?"
+            ) from e
+        except httpx.TimeoutException as e:
+            raise ErrorClienteOllama(
+                f"Ollama no respondió en {TIEMPO_MAXIMO}s (timeout)."
+            ) from e
+        except httpx.HTTPStatusError as e:
+            raise ErrorClienteOllama(
+                f"Ollama respondió con error {e.response.status_code}. "
+                f"¿Existe el modelo '{self.modelo}'?"
+            ) from e
+</file>
+
+<file path="sintactico_lexico_recetas/src/infraestructura/cliente_semantico.py">
+import os
+import httpx
+from dataclasses import asdict
+from dominio.modelos.nodo_ast import NodoReceta
+from dominio.excepciones import ErrorServicioSemantico
+
+URL_SERVICIO_SEMANTICO = os.environ.get(
+    "URL_SERVICIO_SEMANTICO", "http://localhost:8080"
+)
+TIEMPO_MAXIMO = 10
+
+
+class ClienteSemantico:
+    """Cliente HTTP hacia el microservicio de análisis semántico (Java)."""
+
+    def __init__(self, url_base: str = URL_SERVICIO_SEMANTICO):
+        self.url = f"{url_base}/validar"
+
+    def validar(self, ast: NodoReceta) -> list[str]:
+        payload = asdict(ast)
+        try:
+            with httpx.Client(timeout=TIEMPO_MAXIMO) as cliente:
+                respuesta = cliente.post(self.url, json=payload)
+                respuesta.raise_for_status()
+                datos = respuesta.json()
+                return datos.get("errores_semanticos", [])
+        except httpx.RequestError as e:
+            raise ErrorServicioSemantico(
+                f"No se pudo contactar al servicio semántico: {e}"
+            ) from e
+        except httpx.HTTPStatusError as e:
+            raise ErrorServicioSemantico(
+                f"El servicio semántico respondió con error: {e.response.status_code}"
+            ) from e
+</file>
+
+<file path="sintactico_lexico_recetas/src/infraestructura/generador_mensajes_error.py">
+from infraestructura.cliente_ollama import ClienteOllama
+from dominio.excepciones import ErrorClienteOllama
+
+PROMPT_SISTEMA_ERRORES = """Eres un asistente que reformula mensajes de error tecnicos
+de un compilador de recetas en explicaciones claras y breves para un usuario no tecnico.
+No agregues informacion que no este en el mensaje original. Responde en una sola oracion,
+en español, sin tecnicismos como "token" o "AST". No uses JSON, responde solo con texto plano."""
+
+
+class GeneradorMensajesError:
+    def __init__(self):
+        self.cliente = ClienteOllama()
+
+    def humanizar(self, mensaje_tecnico: str) -> str:
+        try:
+            return self.cliente.consultar(PROMPT_SISTEMA_ERRORES, mensaje_tecnico)
+        except ErrorClienteOllama:
+            return mensaje_tecnico
+</file>
+
+<file path="sintactico_lexico_recetas/src/infraestructura/repositorio_historial.py">
+import sqlite3
+import os
+from datetime import datetime
+
+RUTA_DB = os.environ.get("RUTA_DB", "historial.db")
+
+
+def _conectar():
+    conn = sqlite3.connect(RUTA_DB)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS historial (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            oracion TEXT,
+            nodo TEXT,
+            fecha TEXT
+        )
+    """)
+    return conn
+
+
+def guardar_peticion(oracion: str, nodo: str):
+    conn = _conectar()
+    conn.execute(
+        "INSERT INTO historial (oracion, nodo, fecha) VALUES (?, ?, ?)",
+        (oracion, nodo, datetime.now().isoformat())
+    )
+    conn.commit()
+    conn.close()
+
+
+def listar_historial():
+    conn = _conectar()
+    filas = conn.execute(
+        "SELECT id, oracion, nodo, fecha FROM historial ORDER BY id DESC"
+    ).fetchall()
+    conn.close()
+    return filas
+</file>
+
+<file path="sintactico_lexico_recetas/src/main.py">
+import os
+from flask import Flask
+from flask_cors import CORS
+from api.rutas_compilacion import bp_compilacion
+
+app = Flask(__name__)
+CORS(app)
+app.register_blueprint(bp_compilacion)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+</file>
+
+<file path="sintactico_lexico_recetas/requirements.txt">
+flask==3.0.3
+flask-cors==4.0.1
+httpx==0.27.2
+</file>
+
+</files>
